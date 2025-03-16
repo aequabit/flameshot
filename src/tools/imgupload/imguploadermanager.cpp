@@ -3,11 +3,13 @@
 //
 
 #include "imguploadermanager.h"
+#include "src/utils/confighandler.h"
 #include <QPixmap>
 #include <QWidget>
 
 // TODO - remove this hard-code and create plugin manager in the future, you may
 // include other storage headers here
+#include "storages/custom/customuploader.h"
 #include "storages/imgur/imguruploader.h"
 
 ImgUploaderManager::ImgUploaderManager(QObject* parent)
@@ -29,8 +31,14 @@ void ImgUploaderManager::init()
     //    m_qstrUrl = "https://imgur.com/";
     //    m_imgUploaderPlugin = "imgur";
     //}
-    m_urlString = "https://imgur.com/";
-    m_imgUploaderPlugin = "imgur";
+    if (!ConfigHandler().uploadCustomUrl().isEmpty()) {
+        m_urlString = ConfigHandler().uploadCustomUrl();
+        m_imgUploaderPlugin = "custom";
+        return;
+    } else {
+        m_urlString = "https://imgur.com/";
+        m_imgUploaderPlugin = "imgur";
+    }
 }
 
 ImgUploaderBase* ImgUploaderManager::uploader(const QPixmap& capture,
@@ -45,7 +53,11 @@ ImgUploaderBase* ImgUploaderManager::uploader(const QPixmap& capture,
     //    m_imgUploaderBase =
     //      (ImgUploaderBase*)(new ImgurUploader(capture, parent));
     //}
-    m_imgUploaderBase = (ImgUploaderBase*)(new ImgurUploader(capture, parent));
+    if (!ConfigHandler().uploadCustomUrl().isEmpty()) {
+        m_imgUploaderBase = (ImgUploaderBase*)(new CustomUploader(capture, parent));
+    } else {
+        m_imgUploaderBase = (ImgUploaderBase*)(new ImgurUploader(capture, parent));
+    }
     if (m_imgUploaderBase && !capture.isNull()) {
         m_imgUploaderBase->upload();
     }
